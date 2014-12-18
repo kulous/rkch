@@ -1,16 +1,20 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var session = require('express-session');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+var path = require('path');
+
 /* session handling */
 app.use(session({secret: 'ssshhhhh'}));
+
+/* static document serving */
+app.use(express.static(path.join(__dirname + '/assets')));
 
 var sess;
 
 var usercount = 0;
-
-
 
 /* initial page request */
 app.get('/', function(req, res){
@@ -32,10 +36,12 @@ app.get('/', function(req, res){
 
 /* web socket connection */
 io.on('connection', function(socket){
-  console.log('user ' + sess.user + ' connected');
-  socket.on('disconnect',function(){
-    console.log('user ' + sess.user + ' disconnected');
-  });
+  if(sess){
+    console.log('user ' + sess.user + ' connected');
+    socket.on('disconnect',function(){
+      console.log('user ' + sess.user + ' disconnected');
+    });
+  }
 
   socket.on('chat message', function(msg){
    /*console.log(socket.request.connection);*/
