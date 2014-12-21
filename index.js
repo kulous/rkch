@@ -7,7 +7,11 @@ var io = require('socket.io')(http);
 var path = require('path');
 
 /* session handling */
-app.use(session({secret: 'ssshhhhh'}));
+app.use(session({
+	secret: 's883ndkhg1713bdub',
+	resave: false,
+	saveUninitialized: true
+}));
 
 /* static document serving */
 app.use(express.static(path.join(__dirname + '/assets')));
@@ -27,7 +31,7 @@ app.get('/', function(req, res){
    usercount ++;
    sess.user='Guest' + usercount;
    /* give a warm welcome */
-   io.emit('chat message','New user '+sess.user + ' joined!');
+   /*io.emit('chat message','New user '+sess.user + ' joined!');*/
    console.log('no user session');
   }
   res.sendFile(__dirname + '/index.html');
@@ -38,10 +42,12 @@ app.get('/', function(req, res){
 io.on('connection', function(socket){
   if(sess){
     console.log('user ' + sess.user + ' connected');
+   io.emit('chat message','New user '+sess.user + ' joined!');
+  }
     socket.on('disconnect',function(){
       console.log('user ' + sess.user + ' disconnected');
+   io.emit('chat message','User '+sess.user + ' left!');
     });
-  }
 
   socket.on('chat message', function(msg){
    /*console.log(socket.request.connection);*/

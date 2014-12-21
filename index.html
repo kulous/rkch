@@ -2,16 +2,25 @@
 <html>
   <head>
     <title>Real Time Chat Demo</title>
-    <link href='//54.172.147.15/assets/css/rkch.css' rel='stylesheet' type='text/css'>
+    <link href='//devel.kulo.us/assets/css/rkch.css' rel='stylesheet' type='text/css'>
   </head>
   <body>
-    <div id='kconnect-status'></div>
+	Welcome to the Real Time Chat Demo!
+
+
+<div id='rkch-wrapper'>
+	<div id='rkch-outer-title'><div id='kconnect-status'></div>Chat</div>
     <ul id="messages"></ul>
+
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
+</div>
+
+
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
     <script>
       var socket = io();
       $('form').submit(function(){
@@ -22,6 +31,7 @@
       socket.on('chat message', function(msg){
 	console.log('received message='+msg);
         $('#messages').append($('<li>').text(msg));
+	$('#messages').scrollTop($('#messages')[0].scrollHeight);
       });
       socket.on('connect',function(){
         console.log('connection status='+socket.connected);
@@ -30,6 +40,9 @@
       socket.on('disconnect',function(){
         $('#kconnect-status').css("background-color","red");
       });
+
+	$('#rkch-wrapper').resizable();
+	$('#rkch-wrapper').draggable();
     </script>
   </body>
 </html>
