@@ -2,10 +2,14 @@
 <html>
   <head>
     <title>Real Time Chat Demo</title>
-    <link href='//devel.kulo.us/assets/css/rkch.css' rel='stylesheet' type='text/css'>
+    <link href='/style' rel='stylesheet' type='text/css'>
   </head>
   <body>
-	Welcome to the Real Time Chat Demo!
+<h1>Welcome to the Real Time Chat Demo!</h1>
+<div id='kconnect-status'>Connection</div>
+The userlist needs to be dumb on the client. The client will only update available/ away, and add/ remove users to userlist
+<ul id='userlist'>Userlist
+</ul>	
 
 
 <div id='rkch-wrapper'>
@@ -22,24 +26,59 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
     <script>
-      var socket = io();
+	var socket = io();
+
+	function NowTalk() {
+		if( arguments.callee._singletonInstance )
+			return arguments.callee._singletonInstance;
+		arguments.callee._singletonInstance = this;
+		socket.on('user join', function(msg){nt.userjoin(msg);});
+		socket.on('user leave', function(msg){nt.userleave(msg);});
+		socket.on('user presence', function(msg){console.log(msg);});
+		socket.on('chat message', function(msg){nt.receivemsg(msg);});
+		socket.on('connect',function(){nt.connect();});
+		socket.on('disconnect',function(){nt.disconnect();});
+		
+		this.users = [];
+		this.activeUser = function(user){
+			/* returns true if user is active */
+			for( i=0;i<this.users.length;i++){
+				if( user == this.users[i] ){
+					return true;
+				}
+			}
+			return false;
+		}
+
+		this.userjoin = function(user){
+			if( ! this.activeUser(user) )
+				$('#userlist').append($('<li>').text(user));
+				this.users.push(user);
+			console.log('user ' + user + ' reconnecting');
+		}
+		this.userleave = function(user){
+			console.log('received disconnect for ' + user);
+		}
+		this.receivemsg = function(msg){
+        		$('#messages').append($('<li>').text(msg));
+			$('#messages').scrollTop($('#messages')[0].scrollHeight);
+		}
+		this.sendmsg = function(msg){
+        		socket.emit('chat message', msg);
+		}
+		this.connect = function(){
+			$('#kconnect-status').css("background-color","green");
+		}
+		this.disconnect = function(){
+			$('#kconnect-status').css("background-color","red");
+		}
+	};
+	var nt = new NowTalk();
       $('form').submit(function(){
-        socket.emit('chat message', $('#m').val());
-        $('#m').val('');
+	nt.sendmsg($('#m').val());
+	$('#m').val('');
         return false;
-      });
-      socket.on('chat message', function(msg){
-	console.log('received message='+msg);
-        $('#messages').append($('<li>').text(msg));
-	$('#messages').scrollTop($('#messages')[0].scrollHeight);
-      });
-      socket.on('connect',function(){
-        console.log('connection status='+socket.connected);
-        $('#kconnect-status').css("background-color","green");
-      });
-      socket.on('disconnect',function(){
-        $('#kconnect-status').css("background-color","red");
-      });
+	});
 
 	$('#rkch-wrapper').resizable();
 	$('#rkch-wrapper').draggable();
