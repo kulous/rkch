@@ -38,6 +38,9 @@ The userlist needs to be dumb on the client. The client will only update availab
 		socket.on('chat message', function(msg){nt.receivemsg(msg);});
 		socket.on('connect',function(){nt.connect();});
 		socket.on('disconnect',function(){nt.disconnect();});
+
+		this.docked = true;
+		this.fullScreen = false;
 		
 		this.users = [];
 		this.activeUser = function(user){
@@ -82,6 +85,9 @@ The userlist needs to be dumb on the client. The client will only update availab
 
 	$('#rkch-wrapper').resizable();
 	$('#rkch-wrapper').draggable();
+	/*  watch window to move chat if needed */
+	$( window ).resize(function() {
+	});
     </script>
   </body>
 </html>
