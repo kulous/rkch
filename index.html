@@ -7,18 +7,32 @@
   <body>
 <h1>Welcome to the Real Time Chat Demo!</h1>
 <div id='kconnect-status'>Connection</div>
-The userlist needs to be dumb on the client. The client will only update available/ away, and add/ remove users to userlist
-<ul id='userlist'>Userlist
+<ul id='rkch-log'>
 </ul>	
 
-
+<div id='rkch-userlist-wrapper'>
+	<div id='userlist-title'>Userlist</div>
+	<div id='rkch-userlist-inner'>
+		<div id='rkch-userboard'>
+			<div class='row'>A user row</div>
+			<div class='row'>A user row</div>
+			<div class='row'>A user row</div>
+			<div class='row'>A user row</div>
+			<div class='row'>A user row</div>
+			<div class='row'>A user row</div>
+		</div>
+	</div>
+</div>
 <div id='rkch-wrapper'>
 	<div id='rkch-outer-title'><div id='kconnect-status'></div>Chat</div>
-    <ul id="messages"></ul>
-
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
+	<div id='rkch-inner'>
+		<div id="rkch-wall">
+		</div>
+		<form id='rkch-form' action=''>
+			<textarea id="m" autocomplete="off" /></textarea>
+			<!--<button>Send</button>-->
+		</form>
+	</div>
 </div>
 
 
@@ -26,7 +40,21 @@ The userlist needs to be dumb on the client. The client will only update availab
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
     <script>
+function grabEnter(fid,res){
+	$(this).keypress(function(event){
+		var charCode = event.charCode || event.keyCode || event.which || event.charCode;
+		if(charCode == 13){
+			submitIt(fid,res);
+		}
+	});
+}
+
+
+
 	var socket = io();
+	var $app = $('#rkch-wrapper');
+	var $wall = $('#rkch-wrapper > #rkch-inner > #rkch-wall');
+	var $loglist = $('ul#rkch-log');
 
 	function NowTalk() {
 		if( arguments.callee._singletonInstance )
@@ -38,9 +66,12 @@ The userlist needs to be dumb on the client. The client will only update availab
 		socket.on('chat message', function(msg){nt.receivemsg(msg);});
 		socket.on('connect',function(){nt.connect();});
 		socket.on('disconnect',function(){nt.disconnect();});
+		socket.on('log',function(msg){nt.log(msg);});
 
 		this.docked = true;
 		this.fullScreen = false;
+		this.minimized = false;
+
 		
 		this.users = [];
 		this.activeUser = function(user){
@@ -55,7 +86,7 @@ The userlist needs to be dumb on the client. The client will only update availab
 
 		this.userjoin = function(user){
 			if( ! this.activeUser(user) )
-				$('#userlist').append($('<li>').text(user));
+				$('#userlist').append($("<li>").text(user));
 				this.users.push(user);
 			console.log('user ' + user + ' reconnecting');
 		}
@@ -63,28 +94,74 @@ The userlist needs to be dumb on the client. The client will only update availab
 			console.log('received disconnect for ' + user);
 		}
 		this.receivemsg = function(msg){
-        		$('#messages').append($('<li>').text(msg));
-			$('#messages').scrollTop($('#messages')[0].scrollHeight);
+			var m = "<div class='row'>" + msg + "</div>";
+			$wall.append(m);
+        		/*
+			$wall.append($("<div class='row'>").text(msg));
+			*/
+			$wall.scrollTop($wall[0].scrollHeight);
 		}
 		this.sendmsg = function(msg){
         		socket.emit('chat message', msg);
 		}
 		this.connect = function(){
 			$('#kconnect-status').css("background-color","green");
+			this.log('connected to server');
 		}
 		this.disconnect = function(){
 			$('#kconnect-status').css("background-color","red");
+			this.log('lost connection to server');
+		}
+		this.dock = function(){
+			$app.removeClass('rkch-undocked');
+			$app.addClass('rkch-docked');
+			$app.draggable('destroy');
+			this.docked = true;
+		}
+		this.undock = function(){
+			$app.removeClass('rkch-docked');
+			$app.addClass('rkch-undocked');
+			$app.resizable();
+			$app.draggable();
+			this.docked = false;
+			this.restore();
+		}
+		this.minimize = function(){
+			$('#rkch-inner').hide();
+			$('#rkch-wrapper').css('height','27px')
+			this.minimized = true;
+		}
+		this.restore = function(){
+			$('#rkch-inner').show();
+			$('#rkch-wrapper').css('height','230px')
+			this.minimized = false;
+		}
+		this.toggleMin = function(){
+			if(this.minimized){
+				this.restore();
+			}
+			else if(this.docked){
+				this.minimize();
+			}
+		}
+		this.log = function(msg){
+			$loglist.append($("<li>").text("[" + new Date() + "] " + msg));
 		}
 	};
 	var nt = new NowTalk();
-      $('form').submit(function(){
-	nt.sendmsg($('#m').val());
-	$('#m').val('');
-        return false;
+	nt.receivemsg('Chat Host# Welcome to our chat!');
+	$('#rkch-outer-title').click(function(){
+		nt.toggleMin();
+	});
+	$('textarea').keypress(function(event){
+		var charCode = event.charCode || event.keyCode || event.which || event.charCode;
+		if(charCode == 13){
+			nt.sendmsg($('#m').val());
+			$('#m').val('');
+			return false;
+		}
 	});
 
-	$('#rkch-wrapper').resizable();
-	$('#rkch-wrapper').draggable();
 	/*  watch window to move chat if needed */
 	$( window ).resize(function() {
 	});
